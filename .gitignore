@@ -5,9 +5,10 @@ aclocal.m4
 ar-lib
 compile
 config.guess
-config.h.in
-config.h.in~
+config.h*
 config.sub
+config.log
+config.status
 configure
 depcomp
 install-sh
@@ -21,3 +22,10 @@ cscope.*
 lemon
 lighttpd-angel
 proc_open
+distribute.sh
+tests/
+doc/
+src/.deps
+src/Makefile
+stamp-h1
+libtool
