@@ -21,6 +21,15 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#ifndef DISABLE_XIA
+#include "Xsocket.h"
+#include "Xkeys.h"
+
+/* FIXME: Hardcoded Name */
+#define NAME "www_s.lighttpd.aaa.xia"
+
+#endif
+
 #ifdef USE_OPENSSL
 # include <openssl/ssl.h>
 # include <openssl/err.h>
@@ -166,6 +175,11 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	buffer *b;
 	int is_unix_domain_socket = 0;
 	int fd;
+#ifndef DISABLE_XIA
+	char sid_string[strlen("SID:") + XIA_SHA_DIGEST_STR_LEN];
+	sockaddr_x *xia_dag;
+	struct addrinfo *ai;
+#endif
 
 #ifdef __WIN32
 	WORD wVersionRequested;
@@ -250,6 +264,15 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			goto error_free_socket;
 		}
+	}
+#endif
+
+#ifndef DISABLE_XIA
+	srv_socket->addr.plain.sa_family = AF_XIA;
+
+	if (-1 == (srv_socket->fd = Xsocket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0))) {
+		log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
+		goto error_free_socket;
 	}
 #endif
 
@@ -395,10 +418,42 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		}
 
 		break;
+#ifndef DISABLE_XIA
+	case AF_XIA:
+		memset(&srv_socket->addr, 0, sizeof(sockaddr_x));
+ 		srv_socket->addr.un.sun_family = AF_XIA;
+		if(XmakeNewSID(sid_string, sizeof(sid_string))) {
+			log_error_write(srv, __FILE__, __LINE__, "XIA",
+							"Failed to allocate a SID\n");
+			goto error_free_socket;
+		}
+
+		if(Xgetaddrinfo(NULL, sid_string, NULL, &ai) != 0) {
+			log_error_write(srv, __FILE__, __LINE__, "XIA",
+							"Xgetaddrinfo Failed\n");
+			goto error_free_socket;
+		}
+		xia_dag = (sockaddr_x *)ai->ai_addr;
+		if(XregisterName(NAME, xia_dag < 0)) {
+			log_error_write(srv, __FILE__, __LINE__, "XIA",
+							"XregisterName Failed\n");
+			goto error_free_socket;
+		}
+		break;
+#endif
 	default:
 		goto error_free_socket;
 	}
 
+#ifndef DISABLE_XIA
+	if(Xbind(srv_socket->fd, (struct sockaddr *)&srv_socket->addr, sizeof(xia_dag))) {
+		log_error_write(srv, __FILE__, __LINE__, "XIA",
+						"Xbind Failed\n");
+		goto error_free_socket;
+	}
+
+	Xlisten(srv_socket->fd, 5);
+#else
 	if (0 != bind(srv_socket->fd, (struct sockaddr *) &(srv_socket->addr), addr_len)) {
 		switch(srv_socket->addr.plain.sa_family) {
 		case AF_UNIX:
@@ -419,6 +474,8 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 		log_error_write(srv, __FILE__, __LINE__, "ss", "listen failed: ", strerror(errno));
 		goto error_free_socket;
 	}
+
+#endif
 
 	if (s->ssl_enabled) {
 #ifdef USE_OPENSSL

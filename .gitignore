@@ -13,3 +13,11 @@ depcomp
 install-sh
 ltmain.sh
 missing
+*.o
+*.la
+*.lo
+lighttpd
+cscope.*
+lemon
+lighttpd-angel
+proc_open
