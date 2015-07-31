@@ -20,6 +20,10 @@
 # include <inttypes.h>
 #endif
 
+#ifndef DISABLE_XIA
+#include "Xsocket.h"
+#endif
+
 #include "buffer.h"
 #include "array.h"
 #include "chunk.h"
@@ -134,6 +138,9 @@ typedef union {
 	struct sockaddr_un un;
 #endif
 	struct sockaddr plain;
+#ifndef DISABLE_XIA
+	sockaddr_x xiadag;
+#endif
 } sock_addr;
 
 /* fcgi_response_header contains ... */

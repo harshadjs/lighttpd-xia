@@ -76,7 +76,7 @@ common_src=buffer.c log.c \
 	network_solaris_sendfilev.c network_openssl.c \
 	splaytree.c status_counter.c
 
-src = server.c response.c connections.c network.c \
+src = server.c response.c connections.c network.c xia.c\
 	configfile.c configparser.c request.c proc_open.c
 
 lib_LTLIBRARIES =
@@ -266,7 +266,7 @@ mod_accesslog_la_LDFLAGS = -module -export-dynamic -avoid-version
 mod_accesslog_la_LIBADD = $(common_libadd)
 
 
-hdr = server.h buffer.h network.h log.h keyvalue.h \
+hdr = server.h buffer.h network.h xia.h log.h keyvalue.h \
 	response.h request.h fastcgi.h chunk.h \
 	settings.h http_chunk.h \
 	md5.h http_auth.h stream.h \

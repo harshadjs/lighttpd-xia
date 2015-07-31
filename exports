@@ -1,0 +1,2 @@
+export LDFLAGS="-lstdc++ -lpthread -ltidy -lprotobuf /mnt/test/xia-core/api/lib/libXsocket.so /mnt/test/xia-core/api/lib/libdagaddr.so /mnt/test/xia-core/api/lib/libXssl.so /mnt/test/xia-core/daemons/xcache/api/libxcache.a"
+export CFLAGS="-Wall -Wextra -I/mnt/test/xia-core/api/include -I/mnt/test/xia-core/daemons/xcache/api -O2"

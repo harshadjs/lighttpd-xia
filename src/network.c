@@ -179,6 +179,7 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	char sid_string[strlen("SID:") + XIA_SHA_DIGEST_STR_LEN];
 	sockaddr_x *xia_dag;
 	struct addrinfo *ai;
+#define MAX_XID_SIZE 100
 #endif
 
 #ifdef __WIN32
@@ -240,6 +241,16 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 
 	if (*host == '\0') host = NULL;
 
+#ifndef DISABLE_XIA
+	srv_socket->addr.plain.sa_family = AF_XIA;
+
+	fprintf(stderr, "Allocating xsocket\n");
+	if ((srv_socket->fd = Xsocket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0)) < 0) {
+		log_error_write(srv, __FILE__, __LINE__, "ss", "Xsocket failed:", strerror(errno));
+		goto error_free_socket;
+	}
+#endif
+
 	if (is_unix_domain_socket) {
 #ifdef HAVE_SYS_UN_H
 
@@ -264,15 +275,6 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
 			goto error_free_socket;
 		}
-	}
-#endif
-
-#ifndef DISABLE_XIA
-	srv_socket->addr.plain.sa_family = AF_XIA;
-
-	if (-1 == (srv_socket->fd = Xsocket(srv_socket->addr.plain.sa_family, SOCK_STREAM, 0))) {
-		log_error_write(srv, __FILE__, __LINE__, "ss", "socket failed:", strerror(errno));
-		goto error_free_socket;
 	}
 #endif
 
@@ -434,11 +436,12 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 			goto error_free_socket;
 		}
 		xia_dag = (sockaddr_x *)ai->ai_addr;
-		if(XregisterName(NAME, xia_dag < 0)) {
+		if(XregisterName(NAME, xia_dag) < 0) {
 			log_error_write(srv, __FILE__, __LINE__, "XIA",
 							"XregisterName Failed\n");
 			goto error_free_socket;
 		}
+		memcpy(&srv_socket->addr, xia_dag, sizeof(sockaddr_x));
 		break;
 #endif
 	default:
@@ -446,7 +449,7 @@ static int network_server_init(server *srv, buffer *host_token, specific_config 
 	}
 
 #ifndef DISABLE_XIA
-	if(Xbind(srv_socket->fd, (struct sockaddr *)&srv_socket->addr, sizeof(xia_dag))) {
+	if(Xbind(srv_socket->fd, (struct sockaddr *)&srv_socket->addr, sizeof(sockaddr_x)) < 0) {
 		log_error_write(srv, __FILE__, __LINE__, "XIA",
 						"Xbind Failed\n");
 		goto error_free_socket;

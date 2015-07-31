@@ -14,6 +14,9 @@
 #include "joblist.h"
 #include "network_backends.h"
 #include "version.h"
+#ifndef DISABLE_XIA
+#include "xia.h"
+#endif
 
 #include <sys/types.h>
 #include <sys/time.h>
@@ -807,6 +810,10 @@ int main (int argc, char **argv) {
 			}
 		}
 #endif
+#ifndef DISABLE_XIA
+		xia_publish(srv, srv->config_storage[0]);
+#endif
+
 		/* we need root-perms for port < 1024 */
 		if (0 != network_init(srv)) {
 			plugins_free(srv);
@@ -913,6 +920,9 @@ int main (int argc, char **argv) {
 			}
 		}
 
+#ifndef DISABLE_XIA
+		xia_publish(srv, srv->config_storage[0]);
+#endif
 		if (0 != network_init(srv)) {
 			plugins_free(srv);
 			server_free(srv);
